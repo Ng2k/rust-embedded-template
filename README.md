@@ -2,41 +2,62 @@
 
 A minimal and reusable template for developing embedded firmware in Rust.
 
-The project is designed around the [esp-rs](https://github.com/esp-rs) ecosystem and currently provides working firmware templates for both the original ESP32 (Xtensa) and ESP32-C3 (RISC-V).
+The project is built around the [esp-rs](https://github.com/esp-rs) ecosystem and currently provides working firmware templates for:
 
-The repository is intentionally kept minimal: it provides the project structure, toolchains, build configuration, logging and development workflow without introducing unnecessary framework-level abstractions.
+* ESP32 (Xtensa)
+* ESP32-C3 (RISC-V)
+
+The repository intentionally provides **infrastructure rather than a framework**. It includes project structure, target-specific toolchains, build configuration, logging, Docker environments and CI without introducing unnecessary abstractions.
 
 ## Goals
 
-This template aims to provide:
+The template provides:
 
 * A clean starting point for Rust embedded projects
 * Support for multiple MCU architectures
-* Isolated toolchains per firmware target
+* Isolated toolchains and build configurations per firmware target
 * Reproducible development environments
 * `no_std` firmware
 * `defmt` logging
 * Cargo-based dependency management
-* Easy flashing with `espflash`
-* A structure that can be extended to other MCU families such as STM32
+* Flashing and monitoring with `espflash`
+* Docker-based development environments
+* GitHub Actions CI
+* A structure that can be extended to additional MCU families
 
-The template is designed to grow with the project while keeping the hardware-specific parts isolated from reusable application code.
+The template is intentionally designed to grow without coupling hardware-specific code to reusable application logic.
 
 ## Supported Targets
 
-| Target   | Architecture | Rust Toolchain | HAL       |
-| -------- | ------------ | -------------- | --------- |
-| ESP32    | Xtensa       | `esp`          | `esp-hal` |
-| ESP32-C3 | RISC-V       | `stable`       | `esp-hal` |
+| Target   | Architecture | Toolchain | HAL       |
+| -------- | ------------ | --------- | --------- |
+| ESP32    | Xtensa       | `esp`     | `esp-hal` |
+| ESP32-C3 | RISC-V       | `stable`  | `esp-hal` |
 
-The two targets intentionally cover different CPU architectures.
-
-This is useful because the template is not tied to a single instruction set or compiler toolchain.
+The two targets intentionally use different CPU architectures and Rust toolchains. This provides a practical example of how the template isolates target-specific build environments.
 
 ## Project Structure
 
 ```text
 rust-embedded-template/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── crates/
+│   └── logger/
+│       ├── src/
+│       │   └── lib.rs
+│       └── Cargo.toml
+│
+├── docker/
+│   ├── base/
+│   │   └── Dockerfile
+│   ├── esp32/
+│   │   └── Dockerfile
+│   └── esp32c3/
+│       └── Dockerfile
+│
 ├── firmware/
 │   ├── esp32/
 │   │   ├── .cargo/
@@ -45,6 +66,7 @@ rust-embedded-template/
 │   │   │   └── bin/
 │   │   │       └── main.rs
 │   │   ├── build.rs
+│   │   ├── Cargo.lock
 │   │   ├── Cargo.toml
 │   │   └── rust-toolchain.toml
 │   │
@@ -52,47 +74,53 @@ rust-embedded-template/
 │       ├── .cargo/
 │       │   └── config.toml
 │       ├── src/
-│       │   ├── bin/
-│       │   │   └── main.rs
-│       │   └── lib.rs
+│       │   └── bin/
+│       │       └── main.rs
 │       ├── build.rs
+│       ├── Cargo.lock
 │       ├── Cargo.toml
 │       └── rust-toolchain.toml
 │
 ├── Cargo.toml
-├── Cargo.lock
+├── compose.yml
 ├── LICENSE
 └── README.md
 ```
 
-The root `Cargo.toml` defines the workspace, while each firmware crate contains its own target-specific configuration.
+### Workspace structure
 
-## Why Separate Toolchains?
+The repository uses **independent Cargo projects** for the different firmware targets.
 
-ESP32 and ESP32-C3 use different CPU architectures.
+The root workspace contains reusable shared crates:
 
-The original ESP32 uses Xtensa and requires the Espressif Rust toolchain:
-
-```text
-esp
+```toml
+[workspace]
+resolver = "3"
+members = [
+    "crates/logger",
+]
 ```
 
-ESP32-C3 uses RISC-V and can use the standard Rust toolchain:
+Each firmware has its own workspace:
 
-```text
-stable
+```toml
+[workspace]
 ```
 
-For this reason, each firmware crate has its own `rust-toolchain.toml`.
+This is intentional. ESP32 and ESP32-C3 use different architectures and toolchains, so keeping their Cargo projects independent prevents target-specific configuration from leaking between them.
 
-### ESP32
+Build commands should therefore normally be executed from the corresponding firmware directory.
+
+## Toolchains
+
+The original ESP32 uses the Xtensa architecture and requires the Espressif Rust toolchain:
 
 ```toml
 [toolchain]
 channel = "esp"
 ```
 
-### ESP32-C3
+ESP32-C3 uses RISC-V and can use the standard Rust toolchain:
 
 ```toml
 [toolchain]
@@ -101,28 +129,26 @@ components = ["rust-src"]
 targets = ["riscv32imc-unknown-none-elf"]
 ```
 
-This allows each firmware to be developed independently while still belonging to the same Cargo workspace.
-
-> Because the workspace contains firmware using different Rust toolchains, build commands should normally be executed from the individual firmware directories rather than relying on root-level `cargo check --workspace`.
+Each firmware contains its own `rust-toolchain.toml`, allowing the targets to be developed independently.
 
 ## Prerequisites
 
-Install the following tools:
+For local development, install:
 
-* Rust / `rustup`
-* `espup`
+* Rust and `rustup`
+* `espup` for ESP32 Xtensa development
 * `espflash`
 * Git
+
+The exact requirements may change as the esp-rs ecosystem evolves. Refer to the official esp-rs documentation when setting up a new development machine.
 
 ### Rust
 
 Install Rust using `rustup`:
 
-```text
 https://rustup.rs
-```
 
-### espup
+### ESP32 Xtensa
 
 Install `espup`:
 
@@ -130,77 +156,43 @@ Install `espup`:
 cargo install espup
 ```
 
-Then install the Espressif toolchain:
+Then install the ESP32 toolchain:
 
 ```bash
-espup install
+espup install --targets esp32
 ```
 
-For ESP32 and ESP32-C3 targets, the required toolchains can be installed with:
+The ESP32 firmware's `rust-toolchain.toml` automatically selects the `esp` toolchain.
 
-```bash
-espup install --targets esp32,esp32c3
-```
+### ESP32-C3
 
-The exact installation requirements may change with newer versions of the esp-rs ecosystem. Refer to the official esp-rs documentation when setting up a new development machine.
+ESP32-C3 uses the standard Rust toolchain. Its `rust-toolchain.toml` automatically installs the required `rust-src` component and `riscv32imc-unknown-none-elf` target.
 
 ## Building
 
 ### ESP32
 
-Enter the ESP32 firmware directory:
-
 ```bash
 cd firmware/esp32
-```
-
-Check the project:
-
-```bash
 cargo check
-```
-
-Build:
-
-```bash
 cargo build
-```
-
-Build an optimized release:
-
-```bash
 cargo build --release
 ```
 
 ### ESP32-C3
 
-Enter the ESP32-C3 firmware directory:
-
 ```bash
 cd firmware/esp32c3
-```
-
-Check the project:
-
-```bash
 cargo check
-```
-
-Build:
-
-```bash
 cargo build
-```
-
-Build an optimized release:
-
-```bash
 cargo build --release
 ```
 
-## Flashing and Running
+The firmware-specific `.cargo/config.toml` files configure the appropriate target, linker settings and build options automatically.
 
-The firmware crates configure Cargo runners using `espflash`.
+## Flashing and Monitoring
+
+The firmware crates configure `espflash` as their Cargo runner.
 
 With a supported board connected through USB:
 
@@ -226,14 +218,32 @@ cargo run --release
 
 `cargo run` builds the firmware, flashes the device and starts the serial monitor.
 
+For more details, see the flashing and development environment documentation.
+
 ## Logging
 
-The template uses [`defmt`](https://github.com/knurling-rs/defmt) for embedded logging.
+Embedded firmware uses [`defmt`](https://github.com/knurling-rs/defmt) for structured logging.
 
-The current logging stack is:
+The template also provides a small `logger` crate that exposes a common logging interface while keeping the underlying logging implementation target-dependent.
+
+Currently:
+
+* Embedded builds use `defmt`
+* Host builds use `tracing`
+
+Example:
+
+```rust
+logger::info!("Hello world!");
+```
+
+The embedded logging path is:
 
 ```text
 Application
+    │
+    ▼
+  logger
     │
     ▼
   defmt
@@ -248,14 +258,6 @@ defmt-espflash
  espflash
 ```
 
-A simple log message looks like:
-
-```rust
-use defmt::info;
-
-info!("Hello World!");
-```
-
 The log level is configured through:
 
 ```toml
@@ -263,58 +265,64 @@ The log level is configured through:
 DEFMT_LOG = "info"
 ```
 
-The `espflash` runner is configured to decode `defmt` output:
+The `espflash` runner is configured to decode the `defmt` output automatically.
 
-```toml
-runner = "espflash flash --monitor --chip esp32 --log-format defmt"
+## Docker
+
+The repository provides separate Docker environments for the common development layers:
+
+```text
+rust-embedded-base
+        ├── rust-embedded-esp32
+        └── rust-embedded-esp32c3
 ```
 
-or, for ESP32-C3:
+The base image contains the common Rust development environment.
 
-```toml
-runner = "espflash flash --monitor --chip esp32c3 --log-format defmt"
+The MCU-specific images add the required target toolchains and embedded tooling.
+
+Docker Compose provides convenient development containers:
+
+```bash
+docker compose run --rm esp32
 ```
 
-The intention is to keep application code independent from the transport used to display logs.
+or:
 
-A project-specific logging abstraction can be introduced later if the application grows enough to require it.
-
-## Workspace
-
-The repository uses a Cargo workspace:
-
-```toml
-[workspace]
-resolver = "3"
-members = [
-    "firmware/esp32",
-    "firmware/esp32c3",
-]
+```bash
+docker compose run --rm esp32c3
 ```
 
-Common Cargo profiles are defined at the workspace level.
+The Docker environments are intended to make development reproducible across different host machines.
 
-Firmware-specific configuration remains inside each crate:
+For detailed Docker usage, see the project documentation.
 
-* target architecture
-* linker configuration
-* runner
-* environment variables
-* Rust toolchain
+## CI
 
-This separation makes it possible to add additional firmware targets without coupling their build configuration.
+GitHub Actions validates the project automatically.
+
+The CI performs:
+
+* Rust formatting checks
+* Clippy checks with warnings treated as errors
+* Host-side compilation
+* Host-side tests
+* ESP32-C3 firmware build
+* ESP32 firmware build
+
+The embedded firmware builds are performed inside the same Docker environments used for local development.
+
+Hardware flashing is intentionally **not** performed in CI.
 
 ## Design Philosophy
-
-The template follows a few simple principles.
 
 ### Keep the template minimal
 
 The repository should provide infrastructure, not become a framework.
 
-Only abstractions that solve a recurring problem across projects should be added.
+Only abstractions that solve a recurring problem across projects should be introduced.
 
-### Separate hardware from application logic
+### Keep hardware-specific code isolated
 
 As a project grows, the intended architecture is:
 
@@ -334,9 +342,9 @@ As a project grows, the intended architecture is:
 └───────────────────────────┘
 ```
 
-Application and domain code should remain as independent from the underlying MCU as reasonably possible.
+Application and domain logic should remain independent of the underlying MCU whenever reasonably possible.
 
-Hardware-specific code belongs at the bottom of the stack.
+Hardware-specific implementation belongs at the bottom of the stack.
 
 ### Prefer standard embedded abstractions
 
@@ -347,15 +355,24 @@ Reusable drivers and interfaces should prefer ecosystem standards such as:
 
 rather than depending directly on a specific MCU whenever practical.
 
+These abstractions should only be introduced when they solve a real reuse problem.
+
 ### Keep `no_std`
 
-Firmware and reusable embedded components should be designed around `no_std` by default.
+Firmware and reusable embedded components should use `no_std` by default.
 
-Features such as allocation, asynchronous runtimes or networking should only be introduced when they are actually required.
+Features such as:
 
-## Future Targets
+* dynamic allocation
+* asynchronous runtimes
+* networking
+* RTOS integration
 
-The repository is intended to support additional MCU families in the future.
+should only be introduced when required by the project.
+
+## Adding New Targets
+
+Additional MCU families can be added without modifying the existing firmware configurations.
 
 For example:
 
@@ -367,32 +384,29 @@ firmware/
 └── ...
 ```
 
-An STM32 implementation would use its own HAL and toolchain configuration without changing the ESP32 firmware configuration.
+A new MCU target should provide its own:
 
-The goal is to share the higher-level project architecture while keeping hardware-specific implementations isolated.
+* `Cargo.toml`
+* `Cargo.lock`
+* `rust-toolchain.toml`
+* `.cargo/config.toml`
+* `build.rs`
+* firmware entry point
 
-## Development Environment
+Shared application-level code can then be introduced through reusable crates when there is a concrete need for it.
 
-The project can be developed locally using the installed Rust and Espressif tooling.
+## Documentation
 
-A Docker / Dev Container environment can also be provided to make the toolchain reproducible across development machines.
+Detailed development instructions are maintained separately:
 
-The intended layering is:
-
-```text
-rust-embedded-base
-        │
-        └── rust-embedded-esp
-```
-
-Additional MCU-specific environments can be added later, for example:
-
-```text
-rust-embedded-base
-        ├── rust-embedded-esp
-        └── rust-embedded-stm32
-```
+* Docker and development environments
+* Building firmware
+* Flashing and monitoring
+* Adding a new board
+* Adding a new MCU target
+* Contribution and development workflow
 
 ## License
 
 See [LICENSE](LICENSE).
+
