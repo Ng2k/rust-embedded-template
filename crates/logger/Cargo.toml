@@ -1,0 +1,13 @@
+[package]
+name    = "logger"
+version = "0.0.1"
+edition = "2024"
+
+[features]
+host      = ["dep:tracing"]
+embedded  = ["dep:defmt"]
+
+[dependencies]
+tracing             = { version = "0.1", optional = true }
+tracing-subscriber  = { version = "0.3", features = ["fmt"], optional = true }
+defmt               = { version = "1.0.1", optional = true }

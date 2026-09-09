@@ -9,7 +9,7 @@
 #![deny(clippy::large_stack_frames)]
 
 use esp_println as _;
-use defmt::info;
+
 use esp_hal::{
     clock::CpuClock,
     main,
@@ -33,7 +33,7 @@ fn main() -> ! {
     let _peripherals = esp_hal::init(config);
 
     loop {
-        info!("Hello World!");
+        logger::info!("Hello from ESP32!!");
         let delay_start = Instant::now();
         while delay_start.elapsed() < Duration::from_millis(500) {}
     }

@@ -14,12 +14,10 @@ use esp_hal::{
 };
 
 use esp_println as _;
-use defmt::info;
-use defmt::error;
 
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
-    error!("{}", panic_info);
+    logger::error!("{}", panic_info);
     loop {}
 }
 
@@ -34,22 +32,12 @@ esp_bootloader_esp_idf::esp_app_desc!();
 )]
 #[main]
 fn main() -> ! {
-    // generator version: 1.3.0
-    // generator parameters: --chip esp32c3 -o defmt
-
-
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let _peripherals = esp_hal::init(config);
 
-    
-
-
-
     loop {
-        info!("Hello world!");
+        logger::info!("Hello world!");
         let delay_start = Instant::now();
         while delay_start.elapsed() < Duration::from_millis(500) {}
     }
-
-    // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
 }
