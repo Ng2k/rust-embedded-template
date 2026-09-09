@@ -34,7 +34,6 @@ jobs:
 
       - name: Test
         run: cargo test --workspace --no-default-features --features host 
-        
   esp32c3:
     name: ESP32-C3
     runs-on: ubuntu-latest
@@ -52,6 +51,7 @@ jobs:
       - name: Build firmware
         run: |
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
             -e RUSTFLAGS="-D warnings" \
             -v "$PWD:/workspace" \
             -w /workspace/firmware/esp32c3 \
@@ -74,6 +74,7 @@ jobs:
       - name: Build firmware
         run: |
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
             -e RUSTFLAGS="-D warnings" \
             -v "$PWD:/workspace" \
             -w /workspace/firmware/esp32 \
