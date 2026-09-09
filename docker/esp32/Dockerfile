@@ -1,23 +1,54 @@
+# ============================================================
+# ESP32 development image
+# ============================================================
+
 FROM rust-embedded-base:latest
 
 ARG ESPUP_VERSION=0.17.1
+ARG ESPFLASH_VERSION=4.5.0
 
 USER root
 
-# ESP32 / Xtensa development dependencies.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libudev-dev \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libudev-dev \
     && rm -rf /var/lib/apt/lists/*
 
 USER rust
 
-ENV PATH="/home/rust/.cargo/bin:/home/rust/.rustup/toolchains/esp/xtensa-esp32-elf/bin:${PATH}"
+# ------------------------------------------------------------
+# espup
+# ------------------------------------------------------------
 
-# Install espup.
-RUN cargo install espup --version ${ESPUP_VERSION} --locked
+RUN cargo install \
+        espup \
+        --version ${ESPUP_VERSION} \
+        --locked
 
-# Install the Espressif Rust toolchains.
+# ------------------------------------------------------------
+# Espressif Xtensa toolchain
+# ------------------------------------------------------------
+
 RUN espup install --targets esp32
+
+# ------------------------------------------------------------
+# Xtensa toolchain environment
+# ------------------------------------------------------------
+
+ENV PATH="/home/rust/.cargo/bin:/home/rust/.rustup/toolchains/esp/xtensa-esp-elf/esp-15.2.0_20250920/xtensa-esp-elf/bin:${PATH}"
+
+# ------------------------------------------------------------
+# espflash
+# ------------------------------------------------------------
+
+RUN cargo install \
+        espflash \
+        --version ${ESPFLASH_VERSION} \
+        --locked
+
+# ------------------------------------------------------------
+# Workspace
+# ------------------------------------------------------------
 
 WORKDIR /workspace
 

@@ -17,3 +17,9 @@ defmt                   = "1.0.1"
 critical-section        = "1.2.0"
 
 [workspace]
+
+[profile.release]
+codegen-units = 1
+debug = 2
+lto = "fat"
+opt-level = "s"

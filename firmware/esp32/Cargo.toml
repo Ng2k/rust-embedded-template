@@ -17,3 +17,9 @@ critical-section        = "1.2.0"
 logger                  = { path = "../../crates/logger", default-features = false, features = ["embedded"] }
 
 [workspace]
+
+[profile.release]
+codegen-units = 1
+debug = 2
+lto = "fat"
+opt-level = "s"

@@ -6,6 +6,8 @@ services:
       - .:/workspace
       - cargo-registry:/home/rust/.cargo/registry
       - cargo-git:/home/rust/.cargo/git
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
     stdin_open: true
     tty: true
 
@@ -16,6 +18,8 @@ services:
       - .:/workspace
       - cargo-registry:/home/rust/.cargo/registry
       - cargo-git:/home/rust/.cargo/git
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
     stdin_open: true
     tty: true
 

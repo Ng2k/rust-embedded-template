@@ -17,6 +17,7 @@ target
 *.bin
 *.hex
 *.map
+*.core
 
 # Local tooling
 .vscode/
