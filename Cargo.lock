@@ -425,7 +425,7 @@ dependencies = [
  "esp-sync",
  "esp32 0.40.2",
  "esp32c2",
- "esp32c3 0.32.2",
+ "esp32c3",
  "esp32c5",
  "esp32c6",
  "esp32c61",
@@ -500,7 +500,7 @@ dependencies = [
  "document-features",
  "esp-metadata-generated",
  "esp32 0.40.2",
- "esp32c3 0.32.2",
+ "esp32c3",
 ]
 
 [[package]]
@@ -549,17 +549,6 @@ checksum = "5ef0b623533bbaa37e348c18b6b41cfd5b47c3cb64a4b9e44f0295941d62aa2e"
 dependencies = [
  "defmt 1.1.1",
  "vcell",
-]
-
-[[package]]
-name = "esp32c3"
-version = "0.0.1"
-dependencies = [
- "critical-section",
- "defmt 1.1.1",
- "esp-bootloader-esp-idf",
- "esp-hal",
- "esp-println",
 ]
 
 [[package]]
@@ -630,6 +619,17 @@ checksum = "8b4b8c4e4d9f187553ecdb7173edec7b2deb2beea106eedefecdb1654b8ee25a"
 dependencies = [
  "defmt 1.1.1",
  "vcell",
+]
+
+[[package]]
+name = "firmware-esp32c3"
+version = "0.0.1"
+dependencies = [
+ "critical-section",
+ "defmt 1.1.1",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-println",
 ]
 
 [[package]]
