@@ -15,3 +15,5 @@ esp-println             = { version = "0.18.0", features = ["defmt-espflash", "e
 defmt                   = "1.0.1"
 critical-section        = "1.2.0"
 logger                  = { path = "../../crates/logger", default-features = false, features = ["embedded"] }
+
+[workspace]

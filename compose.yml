@@ -1,0 +1,24 @@
+services:
+  esp32:
+    image: rust-embedded-esp32:latest
+    working_dir: /workspace/firmware/esp32
+    volumes:
+      - .:/workspace
+      - cargo-registry:/home/rust/.cargo/registry
+      - cargo-git:/home/rust/.cargo/git
+    stdin_open: true
+    tty: true
+
+  esp32c3:
+    image: rust-embedded-esp32c3:latest
+    working_dir: /workspace/firmware/esp32c3
+    volumes:
+      - .:/workspace
+      - cargo-registry:/home/rust/.cargo/registry
+      - cargo-git:/home/rust/.cargo/git
+    stdin_open: true
+    tty: true
+
+volumes:
+  cargo-registry:
+  cargo-git:

@@ -16,3 +16,4 @@ logger                  = { path = "../../crates/logger", default-features = fal
 defmt                   = "1.0.1"
 critical-section        = "1.2.0"
 
+[workspace]

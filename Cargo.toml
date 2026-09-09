@@ -1,8 +1,6 @@
 [workspace]
 resolver = "3"
 members = [
-    "firmware/esp32",
-    "firmware/esp32c3",
     "crates/logger",
 ]
 
