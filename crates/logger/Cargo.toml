@@ -4,8 +4,8 @@ version = "0.0.1"
 edition = "2024"
 
 [features]
-host      = ["dep:tracing"]
-embedded  = ["dep:defmt"]
+host = ["dep:tracing", "dep:tracing-subscriber"]
+embedded = ["dep:defmt"]
 
 [dependencies]
 tracing             = { version = "0.1", optional = true }

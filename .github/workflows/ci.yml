@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  checks:
+    name: Rust checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --no-default-features --features host -- -D warnings
+
+      - name: Check
+        run: cargo check --workspace --all-targets --no-default-features --features host
+
+      - name: Test
+        run: cargo test --workspace --no-default-features --features host 
+        
+  esp32c3:
+    name: ESP32-C3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build Docker base image
+        run: docker build -f docker/base/Dockerfile -t rust-embedded-base:latest .
+
+      - name: Build ESP32-C3 Docker image
+        run: docker build -f docker/esp32c3/Dockerfile -t rust-embedded-esp32c3:latest .
+
+      - name: Build firmware
+        run: |
+          docker run --rm \
+            -e RUSTFLAGS="-D warnings" \
+            -v "$PWD:/workspace" \
+            -w /workspace/firmware/esp32c3 \
+            rust-embedded-esp32c3:latest \
+            cargo build --release
+  esp32:
+    name: ESP32
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build Docker base image
+        run: docker build -f docker/base/Dockerfile -t rust-embedded-base:latest .
+
+      - name: Build ESP32 Docker image
+        run: docker build -f docker/esp32/Dockerfile -t rust-embedded-esp32:latest .
+
+      - name: Build firmware
+        run: |
+          docker run --rm \
+            -e RUSTFLAGS="-D warnings" \
+            -v "$PWD:/workspace" \
+            -w /workspace/firmware/esp32 \
+            rust-embedded-esp32:latest \
+            cargo build --release
