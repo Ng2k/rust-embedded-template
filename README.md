@@ -49,6 +49,8 @@ rust-embedded-template/
 │   └── logger/
 │       ├── src/
 │       │   └── lib.rs
+│       ├── tests/
+│       │   └── logging.rs
 │       └── Cargo.toml
 │
 ├── docker/
@@ -58,6 +60,11 @@ rust-embedded-template/
 │   │   └── Dockerfile
 │   └── esp32c3/
 │       └── Dockerfile
+│
+├── docs/
+│   ├── BUILD.md
+│   ├── CONTRIBUTING.md
+│   └── DOCKER.md
 │
 ├── firmware/
 │   ├── esp32/
@@ -82,13 +89,16 @@ rust-embedded-template/
 │       ├── Cargo.toml
 │       └── rust-toolchain.toml
 │
+├── .gitignore
+├── .pre-commit-config.yaml
+├── Cargo.lock
 ├── Cargo.toml
 ├── compose.yml
 ├── LICENSE
 └── README.md
 ```
 
-### Workspace structure
+### Workspace Structure
 
 The repository uses **independent Cargo projects** for the different firmware targets.
 
@@ -121,7 +131,7 @@ The original ESP32 uses the Xtensa architecture and requires the Espressif Rust 
 channel = "esp"
 ```
 
-ESP32-C3 uses RISC-V and can use the standard Rust toolchain:
+ESP32-C3 uses RISC-V and the standard Rust toolchain:
 
 ```toml
 [toolchain]
@@ -132,9 +142,20 @@ targets = ["riscv32imc-unknown-none-elf"]
 
 Each firmware contains its own `rust-toolchain.toml`, allowing the targets to be developed independently.
 
-## Prerequisites
+## Development Environment
 
-For local development, install:
+The repository supports two development approaches:
+
+* **Docker-based development**, recommended for a reproducible environment
+* **Native development**, for developers who prefer installing the required embedded toolchains locally
+
+The Docker environment provides the Rust toolchain, target-specific tools and build dependencies without requiring the embedded toolchains to be installed directly on the host system.
+
+For detailed setup instructions, see [DOCKER.md](docs/DOCKER.md).
+
+### Native Development
+
+Native development requires:
 
 * Rust and `rustup`
 * `espup` for ESP32 Xtensa development
@@ -142,15 +163,13 @@ For local development, install:
 * Git
 * `prek` for local pre-commit checks
 
-The exact requirements may change as the esp-rs ecosystem evolves. Refer to the official esp-rs documentation when setting up a new development machine.
+The exact requirements may change as the esp-rs ecosystem evolves. Refer to the official [esp-rs documentation](https://docs.esp-rs.org/) when setting up a new development machine.
 
-### Rust
+#### Rust
 
-Install Rust using `rustup`:
+Install Rust using [rustup](https://rustup.rs).
 
-https://rustup.rs
-
-### ESP32 Xtensa
+#### ESP32 Xtensa
 
 Install `espup`:
 
@@ -166,11 +185,13 @@ espup install --targets esp32
 
 The ESP32 firmware's `rust-toolchain.toml` automatically selects the `esp` toolchain.
 
-### ESP32-C3
+#### ESP32-C3
 
 ESP32-C3 uses the standard Rust toolchain. Its `rust-toolchain.toml` automatically installs the required `rust-src` component and `riscv32imc-unknown-none-elf` target.
 
 ## Building
+
+Build commands should normally be executed from the corresponding firmware directory.
 
 ### ESP32
 
@@ -191,6 +212,8 @@ cargo build --release
 ```
 
 The firmware-specific `.cargo/config.toml` files configure the appropriate target, linker settings and build options automatically.
+
+For detailed build and flashing instructions, see [BUILD.md](docs/BUILD.md).
 
 ## Flashing and Monitoring
 
@@ -220,7 +243,7 @@ cargo run --release
 
 `cargo run` builds the firmware, flashes the device and starts the serial monitor.
 
-For more details, see the flashing and development environment documentation.
+For Docker-specific flashing instructions and serial device configuration, see [BUILD.md](docs/BUILD.md) and [DOCKER.md](docs/DOCKER.md).
 
 ## Logging
 
@@ -297,7 +320,7 @@ docker compose run --rm esp32c3
 
 The Docker environments are intended to make development reproducible across different host machines.
 
-For detailed Docker usage, see the project documentation.
+For detailed Docker usage, see [DOCKER.md](docs/DOCKER.md).
 
 ## Development Checks
 
@@ -318,8 +341,8 @@ prek install
 The hook automatically runs:
 
 * `cargo fmt --all -- --check`
-* `cargo clippy` with warnings treated as errors
-* `cargo test`
+* `cargo clippy --workspace --all-targets --no-default-features --features host -- -D warnings`
+* `cargo test --workspace --no-default-features --features host`
 
 To run all checks manually, including files that are not staged:
 
@@ -328,6 +351,8 @@ prek run --all-files
 ```
 
 The local hooks provide fast feedback during development. GitHub Actions remains the authoritative validation for the repository and additionally builds the ESP32 and ESP32-C3 firmware targets.
+
+For the complete contribution workflow, see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## CI
 
@@ -348,15 +373,17 @@ Hardware flashing is intentionally **not** performed in CI.
 
 ## Design Philosophy
 
-### Keep the template minimal
+### Keep the Template Minimal
 
 The repository should provide infrastructure, not become a framework.
 
 Only abstractions that solve a recurring problem across projects should be introduced.
 
-### Keep hardware-specific code isolated
+### Keep Hardware-Specific Code Isolated
 
-As a project grows, the intended architecture is:
+As a project grows, application and reusable logic can remain independent of the underlying MCU whenever reasonably possible.
+
+One possible architecture for larger projects is:
 
 ```text
 ┌───────────────────────────┐
@@ -374,11 +401,11 @@ As a project grows, the intended architecture is:
 └───────────────────────────┘
 ```
 
-Application and domain logic should remain independent of the underlying MCU whenever reasonably possible.
+This diagram represents a possible direction for projects that grow beyond the initial template. It is **not a mandatory architecture**.
 
-Hardware-specific implementation belongs at the bottom of the stack.
+Hardware-specific implementation should remain isolated where practical.
 
-### Prefer standard embedded abstractions
+### Prefer Standard Embedded Abstractions
 
 Reusable drivers and interfaces should prefer ecosystem standards such as:
 
@@ -425,20 +452,19 @@ A new MCU target should provide its own:
 * `build.rs`
 * firmware entry point
 
-Shared application-level code can then be introduced through reusable crates when there is a concrete need for it.
+Target-specific configuration should remain isolated.
+
+Shared functionality should only be moved into `crates/` when there is a concrete reason to reuse it.
 
 ## Documentation
 
 Detailed development instructions are maintained separately:
 
-* Docker and development environments
-* Building firmware
-* Flashing and monitoring
-* Adding a new board
-* Adding a new MCU target
-* Contribution and development workflow
+* [Docker Development Guide](docs/DOCKER.md) — Docker images, Compose and development containers
+* [Firmware Build Guide](docs/BUILD.md) — building, flashing and monitoring firmware
+* [Contributing Guide](docs/CONTRIBUTING.md) — development workflow, checks and contribution conventions
 
 ## License
 
-See [LICENSE](LICENSE).
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
