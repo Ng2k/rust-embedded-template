@@ -423,7 +423,7 @@ dependencies = [
  "esp-riscv-rt",
  "esp-rom-sys",
  "esp-sync",
- "esp32 0.40.2",
+ "esp32",
  "esp32c2",
  "esp32c3",
  "esp32c5",
@@ -499,7 +499,7 @@ dependencies = [
  "cfg-if",
  "document-features",
  "esp-metadata-generated",
- "esp32 0.40.2",
+ "esp32",
  "esp32c3",
 ]
 
@@ -518,17 +518,6 @@ dependencies = [
  "esp-metadata-generated",
  "riscv",
  "xtensa-lx",
-]
-
-[[package]]
-name = "esp32"
-version = "0.0.1"
-dependencies = [
- "critical-section",
- "defmt 1.1.1",
- "esp-bootloader-esp-idf",
- "esp-hal",
- "esp-println",
 ]
 
 [[package]]
@@ -619,6 +608,17 @@ checksum = "8b4b8c4e4d9f187553ecdb7173edec7b2deb2beea106eedefecdb1654b8ee25a"
 dependencies = [
  "defmt 1.1.1",
  "vcell",
+]
+
+[[package]]
+name = "firmware-esp32"
+version = "0.0.1"
+dependencies = [
+ "critical-section",
+ "defmt 1.1.1",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-println",
 ]
 
 [[package]]
