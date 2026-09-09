@@ -525,8 +525,10 @@ name = "esp32"
 version = "0.0.1"
 dependencies = [
  "critical-section",
+ "defmt 1.1.1",
  "esp-bootloader-esp-idf",
  "esp-hal",
+ "esp-println",
 ]
 
 [[package]]

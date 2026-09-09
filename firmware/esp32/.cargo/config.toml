@@ -6,4 +6,7 @@ rustflags = ["-C", "link-arg=-nostartfiles"]
 build-std = ["core"]
 
 [target.xtensa-esp32-none-elf]
-runner = "espflash flash --monitor --chip esp32"
+runner = "espflash flash --monitor --chip esp32 --log-format defmt"
+
+[env]
+DEFMT_LOG = "info"
