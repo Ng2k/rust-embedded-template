@@ -23,6 +23,7 @@ The template provides:
 * Flashing and monitoring with `espflash`
 * Docker-based development environments
 * GitHub Actions CI
+* `prek` pre-commit checks
 * A structure that can be extended to additional MCU families
 
 The template is intentionally designed to grow without coupling hardware-specific code to reusable application logic.
@@ -139,6 +140,7 @@ For local development, install:
 * `espup` for ESP32 Xtensa development
 * `espflash`
 * Git
+* `prek` for local pre-commit checks
 
 The exact requirements may change as the esp-rs ecosystem evolves. Refer to the official esp-rs documentation when setting up a new development machine.
 
@@ -296,6 +298,36 @@ docker compose run --rm esp32c3
 The Docker environments are intended to make development reproducible across different host machines.
 
 For detailed Docker usage, see the project documentation.
+
+## Development Checks
+
+The repository uses [`prek`](https://github.com/j178/prek) to run formatting, linting and tests locally before creating a commit.
+
+Install `prek` with Cargo:
+
+```bash
+cargo install --locked prek
+```
+
+Install the Git pre-commit hook from the repository root:
+
+```bash
+prek install
+```
+
+The hook automatically runs:
+
+* `cargo fmt --all -- --check`
+* `cargo clippy` with warnings treated as errors
+* `cargo test`
+
+To run all checks manually, including files that are not staged:
+
+```bash
+prek run --all-files
+```
+
+The local hooks provide fast feedback during development. GitHub Actions remains the authoritative validation for the repository and additionally builds the ESP32 and ESP32-C3 firmware targets.
 
 ## CI
 
